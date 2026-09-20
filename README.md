@@ -62,6 +62,33 @@ Cloudflare Dashboard → Workers → `easytier-center` → Settings → Domains 
 
 必须开 `--secure-mode`，网络名/密钥与 Secret 里的 `EASYTIER_NETWORKS` 一致。不要写 `:0` 端口。
 
+### easytier-gui
+
+打开 **添加新网络 / 配置网络**，不要选「公共服务器」（那是官方共享节点，连不上这个 Worker）。
+
+| GUI 字段 | 填什么 |
+| --- | --- |
+| 网络方式 | **手动** |
+| 初始节点 | `wss://easytier-center.<子域>.workers.dev/`（末尾 `/`，不要加 `:0`） |
+| 网络名称 | 部署时的 `EASYTIER_NETWORK_NAME`（例如 `office`） |
+| 网络密码 | 部署时的 `EASYTIER_NETWORK_SECRET` |
+| 虚拟IPv4 / DHCP | 打开 **DHCP** |
+| 高级设置 → 禁用加密 | **不要勾** |
+| 高级设置 → 启用私有模式 | 可关；这不是安全模式 |
+
+输入初始节点后要点一下列表项确认，确认后地址会变成卡片。然后点 **运行网络**。
+
+**安全模式必须开**，否则握手失败（`same-network peers must use the same secure mode`）：
+
+- 新版 GUI：展开 **高级设置 → 功能开关**，打开 **安全模式 / Secure Mode**（在「禁用加密」旁边）。不要把它和「禁用加密」「私有模式」搞混。
+- 旧版 GUI 没有这个开关：点 **显示配置 / 编辑配置文件**，在文件里加上 `secure_mode = true`（或 `[secure_mode]` 段里 `enabled = true`），保存后再运行。如果一点保存这一行就消失，换较新的 GUI，或直接用下面的 `easytier-core`。
+
+可选：把部署时打印的中心节点公钥配到 `peer_public_key`，用来锁定 Worker 身份。GUI 里若没有这项，同样写进配置文件。
+
+家宽出口节点再填 **子网代理CIDR**，例如 `192.168.1.0/24`。
+
+### 命令行
+
 ```bash
 easytier-core \
   -d \
