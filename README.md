@@ -1,6 +1,6 @@
 # EasyTier 中心节点（Cloudflare Workers）
 
-不需要 Docker，也不需要自己的 24 小时主机。中心节点直接跑在 Cloudflare 边缘：`wrangler deploy` 之后，客户端用 `wss://你的 Worker 域名/` 接入。
+不需要 Docker，也不需要自己的 24 小时主机。中心节点直接跑在 Cloudflare 边缘：`wrangler deploy` 之后，客户端用 `wss://你的 Worker 域名:443/` 接入。
 
 ```text
 远程客户端  --wss://easytier-center.<账号>.workers.dev-->  Cloudflare Worker
@@ -60,7 +60,7 @@ Cloudflare Dashboard → Workers → `easytier-center` → Settings → Domains 
 
 ## 2. 客户端接入
 
-必须开 `--secure-mode`，网络名/密钥与 Secret 里的 `EASYTIER_NETWORKS` 一致。不要写 `:0` 端口。
+必须开 `--secure-mode`，网络名/密钥与 Secret 里的 `EASYTIER_NETWORKS` 一致。Worker 只开 **443**。EasyTier GUI 里 WSS 默认端口是 **11012**，不改就会 `connect timeout`。
 
 ### easytier-gui
 
@@ -69,12 +69,20 @@ Cloudflare Dashboard → Workers → `easytier-center` → Settings → Domains 
 | GUI 字段 | 填什么 |
 | --- | --- |
 | 网络方式 | **手动** |
-| 初始节点 | `wss://easytier-center.<子域>.workers.dev/`（末尾 `/`，不要加 `:0`） |
+| 初始节点 | 协议 **wss**，主机 `easytier-center.<子域>.workers.dev`，端口 **443** |
+| 或一整条 URI | `wss://easytier-center.<子域>.workers.dev:443/` |
 | 网络名称 | 部署时的 `EASYTIER_NETWORK_NAME`（例如 `office`） |
 | 网络密码 | 部署时的 `EASYTIER_NETWORK_SECRET` |
 | 虚拟IPv4 / DHCP | 打开 **DHCP** |
 | 高级设置 → 禁用加密 | **不要勾** |
 | 高级设置 → 启用私有模式 | 可关；这不是安全模式 |
+
+保存后再打开配置，确认端口仍是 **443**，不是 `11012`。有的 GUI 会把 443 改回 11012，这时用 **编辑配置文件** 写成：
+
+```toml
+[[peer]]
+uri = "wss://easytier-center.<子域>.workers.dev:443/"
+```
 
 输入初始节点后要点一下列表项确认，确认后地址会变成卡片。然后点 **运行网络**。
 
@@ -97,7 +105,7 @@ easytier-core \
   --network-name office \
   --network-secret '和部署时相同的密钥' \
   --secure-mode \
-  -p 'wss://easytier-center.<子域>.workers.dev/'
+  -p 'wss://easytier-center.<子域>.workers.dev:443/'
 ```
 
 或改仓库里的示例：

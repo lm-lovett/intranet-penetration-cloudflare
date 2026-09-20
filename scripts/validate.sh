@@ -40,14 +40,14 @@ if not any(b.get("class_name") == "EasyTierServer" for b in bindings):
     sys.exit(1)
 
 readme = (root / "README.md").read_text()
-for needle in ("wrangler", "secure-mode", "cf-deploy.sh", "easytier-gui", "初始节点"):
+for needle in ("wrangler", "secure-mode", "cf-deploy.sh", "easytier-gui", "初始节点", ":443"):
     if needle not in readme:
         print(f"README missing {needle!r}", file=sys.stderr)
         sys.exit(1)
 
 client = (root / "examples/client.toml").read_text()
-if "secure_mode = true" not in client or "wss://" not in client:
-    print("client.toml must use secure_mode and wss peer", file=sys.stderr)
+if "secure_mode = true" not in client or "wss://" not in client or ":443" not in client:
+    print("client.toml must use secure_mode and wss :443 peer", file=sys.stderr)
     sys.exit(1)
 
 print("cloudflare worker config ok")

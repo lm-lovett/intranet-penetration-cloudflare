@@ -16,7 +16,7 @@ network_name = "office"
 network_secret = "change-me-to-a-long-random-secret"
 
 [[peer]]
-uri = "wss://easytier-center.example.workers.dev/"
+uri = "wss://easytier-center.example.workers.dev:443/"
 
 [flags]
 enable_encryption = true
