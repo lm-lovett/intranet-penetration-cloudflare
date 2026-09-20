@@ -12,3 +12,4 @@ cloudflare/node_modules/
 cloudflare/dist/
 cloudflare/.tmp/
 cloudflare/wasm/target/
+cloudflare/.deploy-env
