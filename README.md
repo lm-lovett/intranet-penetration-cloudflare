@@ -56,18 +56,20 @@ https://easytier-center.<你的子域>.workers.dev
 
 ### 绑定自己的域名（国内直连）
 
-当前中心节点自定义域名是 **`lm191549149.me`**。GUI 初始节点填 `wss://lm191549149.me:443/`。`*.workers.dev` 在国内经常被干扰，开代理才能连。
+当前中心节点自定义域名是 **`lm191549149.me`**，Worker 已经绑好。GUI 初始节点填 `wss://lm191549149.me:443/`。
 
-这个域名刚在阿里云注册，NS 还是 `dns25/26.hichina.com`，且处于 hold，解析尚未生效。Wrangler 登录权限不能代你「添加站点」，需要你在 Dashboard 点一下：
+还差阿里云把 DNS 服务器改成 Cloudflare 这两条（不要填成网址，也不要加 `https://`）：
 
-1. 阿里云完成域名实名，等 hold 解除（能 `ping lm191549149.me` 或至少能查到 NS 为止）。
-2. 打开 [Cloudflare 添加站点](https://dash.cloudflare.com/f6415092f5078e7f20e61b7008492ace/add-site)，填 `lm191549149.me`，选免费计划。
-3. 把阿里云 DNS 改成 Cloudflare 显示的两个 NS，不要再用 hichina。
-4. 改完告诉我，我会 `wrangler deploy` 把 Worker 绑到这个域名。`cloudflare/wrangler.jsonc` 里已经写好 `lm191549149.me`。
+```text
+macy.ns.cloudflare.com
+sonny.ns.cloudflare.com
+```
 
-绑好后先**关掉代理**打开 `https://lm191549149.me/healthz`，应返回 `"ok": true`。
+阿里云操作：登录 [域名控制台](https://dc.console.aliyun.com/) → 域名列表找到 `lm191549149.me` → **管理** → 左侧 **DNS管理** → **DNS修改** → **修改DNS服务器** → 删掉原来的 `dns25.hichina.com` / `dns26.hichina.com`，填上面两个 → **确定**。
 
-若自定义域名仍必须开代理，Workers 当不了唯一入口，改用能直连的机器跑 `easytier-core`，见 [docs/tunnel.md](docs/tunnel.md)。过渡：代理规则只走 `lm191549149.me`（TUN/增强模式）。
+不要去「云解析 DNS」里加 A 记录，那不是这一步。改完等几分钟到几小时，关掉代理打开 `https://lm191549149.me/healthz`，应返回 `"ok": true`。
+
+若按钮是灰的或提示 hold / 未实名，先在阿里云把域名实名做完。若自定义域名仍必须开代理，见 [docs/tunnel.md](docs/tunnel.md)。
 
 ## 2. 客户端接入
 
