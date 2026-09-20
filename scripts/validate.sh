@@ -40,7 +40,7 @@ if not any(b.get("class_name") == "EasyTierServer" for b in bindings):
     sys.exit(1)
 
 readme = (root / "README.md").read_text()
-for needle in ("wrangler", "secure-mode", "cf-deploy.sh", "easytier-gui", "初始节点", ":443"):
+for needle in ("wrangler", "secure-mode", "cf-deploy.sh", "easytier-gui", "初始节点", ":443", "workers.dev"):
     if needle not in readme:
         print(f"README missing {needle!r}", file=sys.stderr)
         sys.exit(1)

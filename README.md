@@ -54,9 +54,18 @@ https://easytier-center.<你的子域>.workers.dev
 - 在 Dashboard 左上角账号切换器里找预览账号名称。
 - 要把中心节点放到已有账号：对本机执行 `./scripts/cf-deploy.sh login`，选中已有账号，再跑 `secrets` 和 `deploy`（不要加 `--temporary`）。绑定自定义域名也必须在那个已有账号上做。
 
-### 绑定自己的域名（可选）
+### 绑定自己的域名（国内直连必做）
 
-Cloudflare Dashboard → Workers → `easytier-center` → Settings → Domains & Routes，加上例如 `et.example.com`。客户端 peer 改成 `wss://et.example.com:443/`。
+`*.workers.dev` 在国内经常被干扰：开代理软件能连、关掉就不行，是入口被拦，不是 EasyTier 配置错。这个 Worker 账号里目前没有 Zone，必须先加一个你已经能直连的域名。
+
+1. 把域名加到 **同一个** Cloudflare 账号（Dashboard 左上角是 `Liumeng191549149@gmail.com's Account`）。
+2. Workers → `easytier-center` → Settings → Domains & Routes → Add → Custom Domain，填例如 `et.你的域名.com`（不要用 `workers.dev`）。
+3. GUI 初始节点改成 `wss://et.你的域名.com:443/`，网络名/密码/安全模式不用动。
+4. 浏览器先打开 `https://et.你的域名.com/healthz`，**关掉代理** 应返回 `"ok": true`，再运行 EasyTier。
+
+绑了自己的域名仍然必须开代理，说明当前网络连 Cloudflare 边缘也不稳，Workers 当不了唯一入口。改用一台能直连的境外/香港机器跑官方 `easytier-core`，见 [docs/tunnel.md](docs/tunnel.md)。
+
+过渡办法：代理软件用规则模式，只把 `easytier-center.liumeng191549149.workers.dev`（或你的自定义域名）走代理，不必开全局 VPN。EasyTier 本身没有“走系统 HTTP 代理”的开关，规则必须能兜住这条 WSS（TUN / 增强模式）。
 
 ## 2. 客户端接入
 
