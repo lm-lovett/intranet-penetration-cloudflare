@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>cfpen 登录 Cloudflare</title>
+  <style>
+    :root { color-scheme: light dark; --bg: #0f1419; --card: #1a2332; --fg: #e7ecf3; --muted: #8b9bb4; --acc: #f48120; --ok: #3dd68c; --line: #2a3548; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--fg); }
+    main { max-width: 560px; margin: 48px auto; padding: 0 20px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
+    h1 { font-size: 22px; margin: 0 0 8px; }
+    h1 span { color: var(--acc); }
+    p { color: var(--muted); line-height: 1.5; }
+    ol { color: var(--fg); padding-left: 1.2em; }
+    textarea { width: 100%; min-height: 92px; margin: 12px 0; background: #0f1419; color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font: inherit; }
+    button, .btn { display: inline-block; background: var(--acc); color: #111; border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; font-weight: 700; text-decoration: none; }
+    .ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); margin-left: 8px; }
+    .ok { color: var(--ok); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <h1>cf<span>pen</span> 登录 Cloudflare</h1>
+      <p>已尝试打开 Cloudflare。未登录会先进入登录页；登录后会预填创建 Token 的权限，点 Create Token，再把 Token 粘贴回来。</p>
+      <p>
+        <a class="btn" id="cf" href="__CF_URL__" target="_blank" rel="noopener">打开 Cloudflare 登录</a>
+      </p>
+      <ol>
+        <li>在打开的页面登录 Cloudflare 账号</li>
+        <li>确认权限后创建 Token</li>
+        <li>把 Token 粘贴到下面，完成登录</li>
+      </ol>
+      <form method="post" action="/done">
+        <input type="hidden" name="state" value="__STATE__" />
+        <textarea name="token" placeholder="粘贴 API Token" required autocomplete="off"></textarea>
+        <button type="submit">完成登录</button>
+      </form>
+    </div>
+  </main>
+  <script>
+    (function () {
+      var a = document.getElementById("cf");
+      if (a && a.href) {
+        window.open(a.href, "_blank");
+      }
+    })();
+  </script>
+</body>
+</html>

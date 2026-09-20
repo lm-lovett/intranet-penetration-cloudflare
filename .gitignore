@@ -1,0 +1,15 @@
+/bin/
+/dist/
+/cfpen
+*.exe
+*.test
+*.out
+.idea/
+.vscode/
+.DS_Store
+.env
+credentials.json
+*.token
+node_modules/
+worker/.wrangler/
+worker/dist/
