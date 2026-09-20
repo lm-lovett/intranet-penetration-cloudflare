@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>cfpen</title>
+  <style>
+    :root { color-scheme: light dark; --bg: #0f1419; --card: #1a2332; --fg: #e7ecf3; --muted: #8b9bb4; --acc: #f48120; --ok: #3dd68c; --line: #2a3548; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--fg); }
+    header { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+    h1 { font-size: 18px; margin: 0; letter-spacing: 0.04em; }
+    h1 span { color: var(--acc); }
+    main { max-width: 920px; margin: 0 auto; padding: 24px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .ok { color: var(--ok); }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { text-align: left; padding: 8px 4px; border-bottom: 1px solid var(--line); font-size: 14px; }
+    input, button { font: inherit; }
+    input { background: #0f1419; color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
+    button { background: var(--acc); color: #111; border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-weight: 600; }
+    button.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+    form { display: grid; gap: 8px; margin-top: 12px; }
+    .row { display: flex; gap: 8px; }
+    pre { background: #0f1419; padding: 12px; border-radius: 8px; overflow: auto; font-size: 12px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>cf<span>pen</span> 控制台</h1>
+    <div class="muted" id="mode">加载中…</div>
+  </header>
+  <main>
+    <div class="grid">
+      <section class="card">
+        <div class="muted">隧道状态</div>
+        <p id="statusLine">—</p>
+        <p class="muted" id="meta"></p>
+      </section>
+      <section class="card">
+        <div class="muted">外网客户端</div>
+        <p>把下面的 JSON 拷到外网机器，然后运行 <code>cfpen connect --token-file client.json</code></p>
+        <div class="row">
+          <button id="copyClient" type="button">复制 client.json</button>
+          <button class="ghost" id="reload" type="button">刷新</button>
+        </div>
+        <pre id="clientJson">{}</pre>
+      </section>
+    </div>
+    <section class="card" style="margin-top:16px">
+      <div class="muted">已发布服务（公网 HTTPS）</div>
+      <table>
+        <thead><tr><th>名称</th><th>域名</th><th>源站</th><th></th></tr></thead>
+        <tbody id="svcBody"></tbody>
+      </table>
+      <form id="exposeForm">
+        <div class="row">
+          <input name="origin" placeholder="8080 或 127.0.0.1:3000" required />
+          <input name="hostname" placeholder="app.example.com（可空则自动）" />
+        </div>
+        <div class="row">
+          <input name="name" placeholder="名称（可空）" />
+          <input name="protocol" placeholder="协议，默认 http" />
+          <button type="submit">暴露服务</button>
+        </div>
+      </form>
+    </section>
+  </main>
+  <script>
+    async function load() {
+      const st = await (await fetch("/api/status")).json();
+      document.getElementById("mode").textContent = st.mode || "unknown";
+      document.getElementById("statusLine").innerHTML = st.running
+        ? '<span class="ok">运行中</span>'
+        : "未运行";
+      document.getElementById("meta").textContent = [
+        st.tunnel_id ? "tunnel " + st.tunnel_id : "",
+        st.proxy_hostname ? "proxy " + st.proxy_hostname : "",
+        st.proxy_listen ? "socks " + st.proxy_listen : "",
+        st.client_listen ? "client " + st.client_listen : ""
+      ].filter(Boolean).join(" · ");
+      const bundle = await (await fetch("/api/client")).json();
+      document.getElementById("clientJson").textContent = JSON.stringify(bundle, null, 2);
+      const svcs = await (await fetch("/api/services")).json();
+      const body = document.getElementById("svcBody");
+      body.innerHTML = "";
+      (svcs.services || []).forEach(s => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${s.name}</td><td><a href="${s.url}" target="_blank" rel="noopener">${s.hostname}</a></td><td>${s.service}</td><td><button class="ghost" data-name="${s.name}">删除</button></td>`;
+        body.appendChild(tr);
+      });
+      body.querySelectorAll("button").forEach(btn => {
+        btn.onclick = async () => {
+          await fetch("/api/services/" + encodeURIComponent(btn.dataset.name), { method: "DELETE" });
+          load();
+        };
+      });
+    }
+    document.getElementById("reload").onclick = load;
+    document.getElementById("copyClient").onclick = async () => {
+      await navigator.clipboard.writeText(document.getElementById("clientJson").textContent);
+    };
+    document.getElementById("exposeForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const body = Object.fromEntries(fd.entries());
+      const res = await fetch("/api/services", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!res.ok) {
+        alert(await res.text());
+        return;
+      }
+      e.target.reset();
+      load();
+    };
+    load();
+    setInterval(load, 8000);
+  </script>
+</body>
+</html>
