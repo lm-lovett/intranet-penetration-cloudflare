@@ -60,15 +60,7 @@ https://easytier-center.<你的子域>.workers.dev
 
 阿里云 DNS 已经改对。Cloudflare 站点目前仍是 **Pending（未激活）**，解析只有占位 IPv6 `100::`、没有 IPv4，证书也还没签发，所以 `https://lm191549149.me/healthz` 会打不开。
 
-在 Cloudflare 点一次「检查名称服务器」：
-
-1. 打开 [Cloudflare 网站概览](https://dash.cloudflare.com/f6415092f5078e7f20e61b7008492ace/lm191549149.me)
-2. 看到域名状态是 **Pending / 待处理**
-3. 点 **Check nameservers now**（中文多半是 **重新检查名称服务器** / **立即验证**）
-4. 等到状态变成 **Active / 已激活**（可能几分钟，偶尔要更久）
-5. 再打开 `https://lm191549149.me/healthz`
-
-国内 DNS 可能还缓存着旧结果，可把电脑 DNS 临时改成 `223.5.5.5` 或 `8.8.8.8` 再试。在这之前继续用 `https://easytier-center.liumeng191549149.workers.dev/healthz`。
+浏览器打开 `https://lm191549149.me/` 会看到中继说明，不是博客。博客在 `https://blog.lm191549149.me/`。确认中继用 `https://lm191549149.me/healthz`。GUI 初始节点填 `wss://lm191549149.me:443/`。
 
 ## 2. 客户端接入
 

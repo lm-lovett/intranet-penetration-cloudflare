@@ -36,6 +36,32 @@ export default {
 
 		if (url.pathname !== "/") return new Response("Not found", { status: 404 });
 		if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
+			if (request.method === "GET" || request.method === "HEAD") {
+				return new Response(
+					`<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>EasyTier 中心节点</title>
+</head>
+<body>
+  <h1>EasyTier 中心节点已上线</h1>
+  <p>这是组网中继，不是网站。博客在 <a href="https://blog.lm191549149.me/">blog.lm191549149.me</a>。</p>
+  <p>easytier-gui 初始节点填：<code>wss://lm191549149.me:443/</code></p>
+  <p>健康检查：<a href="/healthz">/healthz</a></p>
+</body>
+</html>
+`,
+					{
+						status: 200,
+						headers: {
+							"content-type": "text/html; charset=utf-8",
+							"cache-control": "no-store",
+						},
+					},
+				);
+			}
 			return new Response("Expected a WebSocket upgrade", {
 				status: 426,
 				headers: { Upgrade: "websocket" },
