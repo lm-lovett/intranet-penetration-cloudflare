@@ -19,7 +19,7 @@ network_name = "office"
 network_secret = "change-me-to-a-long-random-secret"
 
 [[peer]]
-uri = "wss://easytier-center.example.workers.dev:443/"
+uri = "wss://lm191549149.me:443/"
 
 [[proxy_network]]
 cidr = "192.168.1.0/24"

@@ -3,7 +3,7 @@
 不需要 Docker，也不需要自己的 24 小时主机。中心节点直接跑在 Cloudflare 边缘：`wrangler deploy` 之后，客户端用 `wss://你的 Worker 域名:443/` 接入。
 
 ```text
-远程客户端  --wss://easytier-center.<账号>.workers.dev-->  Cloudflare Worker
+远程客户端  --wss://lm191549149.me:443-->  Cloudflare Worker
                                                               │
                                                      Durable Object 中继
                                                               │
@@ -54,18 +54,20 @@ https://easytier-center.<你的子域>.workers.dev
 - 在 Dashboard 左上角账号切换器里找预览账号名称。
 - 要把中心节点放到已有账号：对本机执行 `./scripts/cf-deploy.sh login`，选中已有账号，再跑 `secrets` 和 `deploy`（不要加 `--temporary`）。绑定自定义域名也必须在那个已有账号上做。
 
-### 绑定自己的域名（国内直连必做）
+### 绑定自己的域名（国内直连）
 
-`*.workers.dev` 在国内经常被干扰：开代理软件能连、关掉就不行，是入口被拦，不是 EasyTier 配置错。这个 Worker 账号里目前没有 Zone，必须先加一个你已经能直连的域名。
+当前中心节点自定义域名是 **`lm191549149.me`**。GUI 初始节点填 `wss://lm191549149.me:443/`。`*.workers.dev` 在国内经常被干扰，开代理才能连。
 
-1. 把域名加到 **同一个** Cloudflare 账号（Dashboard 左上角是 `Liumeng191549149@gmail.com's Account`）。
-2. Workers → `easytier-center` → Settings → Domains & Routes → Add → Custom Domain，填例如 `et.你的域名.com`（不要用 `workers.dev`）。
-3. GUI 初始节点改成 `wss://et.你的域名.com:443/`，网络名/密码/安全模式不用动。
-4. 浏览器先打开 `https://et.你的域名.com/healthz`，**关掉代理** 应返回 `"ok": true`，再运行 EasyTier。
+这个域名刚在阿里云注册，NS 还是 `dns25/26.hichina.com`，且处于 hold，解析尚未生效。Wrangler 登录权限不能代你「添加站点」，需要你在 Dashboard 点一下：
 
-绑了自己的域名仍然必须开代理，说明当前网络连 Cloudflare 边缘也不稳，Workers 当不了唯一入口。改用一台能直连的境外/香港机器跑官方 `easytier-core`，见 [docs/tunnel.md](docs/tunnel.md)。
+1. 阿里云完成域名实名，等 hold 解除（能 `ping lm191549149.me` 或至少能查到 NS 为止）。
+2. 打开 [Cloudflare 添加站点](https://dash.cloudflare.com/f6415092f5078e7f20e61b7008492ace/add-site)，填 `lm191549149.me`，选免费计划。
+3. 把阿里云 DNS 改成 Cloudflare 显示的两个 NS，不要再用 hichina。
+4. 改完告诉我，我会 `wrangler deploy` 把 Worker 绑到这个域名。`cloudflare/wrangler.jsonc` 里已经写好 `lm191549149.me`。
 
-过渡办法：代理软件用规则模式，只把 `easytier-center.liumeng191549149.workers.dev`（或你的自定义域名）走代理，不必开全局 VPN。EasyTier 本身没有“走系统 HTTP 代理”的开关，规则必须能兜住这条 WSS（TUN / 增强模式）。
+绑好后先**关掉代理**打开 `https://lm191549149.me/healthz`，应返回 `"ok": true`。
+
+若自定义域名仍必须开代理，Workers 当不了唯一入口，改用能直连的机器跑 `easytier-core`，见 [docs/tunnel.md](docs/tunnel.md)。过渡：代理规则只走 `lm191549149.me`（TUN/增强模式）。
 
 ## 2. 客户端接入
 
@@ -78,8 +80,8 @@ https://easytier-center.<你的子域>.workers.dev
 | GUI 字段 | 填什么 |
 | --- | --- |
 | 网络方式 | **手动** |
-| 初始节点 | 协议 **wss**，主机 `easytier-center.<子域>.workers.dev`，端口 **443** |
-| 或一整条 URI | `wss://easytier-center.<子域>.workers.dev:443/` |
+| 初始节点 | 协议 **wss**，主机 `lm191549149.me`，端口 **443** |
+| 或一整条 URI | `wss://lm191549149.me:443/` |
 | 网络名称 | 部署时的 `EASYTIER_NETWORK_NAME`（例如 `office`） |
 | 网络密码 | 部署时的 `EASYTIER_NETWORK_SECRET` |
 | 虚拟IPv4 / DHCP | 打开 **DHCP** |
@@ -90,7 +92,7 @@ https://easytier-center.<你的子域>.workers.dev
 
 ```toml
 [[peer]]
-uri = "wss://easytier-center.<子域>.workers.dev:443/"
+uri = "wss://lm191549149.me:443/"
 ```
 
 输入初始节点后要点一下列表项确认，确认后地址会变成卡片。然后点 **运行网络**。
@@ -122,7 +124,7 @@ easytier-core \
   --network-name office \
   --network-secret '和部署时相同的密钥' \
   --secure-mode \
-  -p 'wss://easytier-center.<子域>.workers.dev:443/'
+  -p 'wss://lm191549149.me:443/'
 ```
 
 或改仓库里的示例：

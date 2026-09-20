@@ -31,6 +31,10 @@ data = json.loads(stripped)
 if data.get("name") != "easytier-center":
     print("wrangler name must be easytier-center", file=sys.stderr)
     sys.exit(1)
+routes = data.get("routes") or []
+if not any(r.get("custom_domain") and r.get("pattern") == "lm191549149.me" for r in routes):
+    print("wrangler must bind custom domain lm191549149.me", file=sys.stderr)
+    sys.exit(1)
 if data.get("main") != "src/index.ts":
     print("wrangler main must be src/index.ts", file=sys.stderr)
     sys.exit(1)
@@ -40,7 +44,7 @@ if not any(b.get("class_name") == "EasyTierServer" for b in bindings):
     sys.exit(1)
 
 readme = (root / "README.md").read_text()
-for needle in ("wrangler", "secure-mode", "cf-deploy.sh", "easytier-gui", "初始节点", ":443", "workers.dev"):
+for needle in ("wrangler", "secure-mode", "cf-deploy.sh", "easytier-gui", "初始节点", ":443", "lm191549149.me"):
     if needle not in readme:
         print(f"README missing {needle!r}", file=sys.stderr)
         sys.exit(1)

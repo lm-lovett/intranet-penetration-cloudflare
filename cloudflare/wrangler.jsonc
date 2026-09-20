@@ -22,6 +22,13 @@
 		"EASYTIER_HOSTNAME": "cf-center",
 		"MAX_FRAME_BYTES": "1048576"
 	},
+	"workers_dev": true,
+	"routes": [
+		{
+			"pattern": "lm191549149.me",
+			"custom_domain": true
+		}
+	],
 	"placement": {
 		"mode": "smart"
 	},
