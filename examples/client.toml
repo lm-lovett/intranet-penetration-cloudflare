@@ -1,10 +1,11 @@
-# Remote client: laptop / phone companion / office PC.
-# Copy, fill secrets, then:
+# Remote client: laptop / phone / office PC connecting to the
+# Cloudflare Workers center node.
 #   easytier-core -c client.toml
 
 instance_name = "client"
 hostname = "laptop"
 dhcp = true
+secure_mode = true
 listeners = [
   "tcp://0.0.0.0:11010",
   "udp://0.0.0.0:11010",
@@ -15,7 +16,7 @@ network_name = "office"
 network_secret = "change-me-to-a-long-random-secret"
 
 [[peer]]
-uri = "wss://et.example.com/"
+uri = "wss://easytier-center.example.workers.dev/"
 
 [flags]
 enable_encryption = true

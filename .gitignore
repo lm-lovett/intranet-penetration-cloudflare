@@ -5,3 +5,10 @@ cert.pem
 conf/credentials.json
 conf/cert.pem
 conf/cloudflared.yml
+cloudflare/.dev.vars
+cloudflare/.keys
+cloudflare/.wrangler/
+cloudflare/node_modules/
+cloudflare/dist/
+cloudflare/.tmp/
+cloudflare/wasm/target/

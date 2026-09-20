@@ -11,67 +11,46 @@ need() {
   fi
 }
 
-need docker-compose.yml
-need docker-compose.bridge.yml
-need docker-compose.quick.yml
-need .env.example
-need conf/easytier.toml
-need conf/easytier.bridge.toml
+need cloudflare/wrangler.jsonc
+need cloudflare/src/index.ts
+need cloudflare/package.json
+need cloudflare/LICENSE
+need scripts/cf-deploy.sh
 need examples/client.toml
 need examples/lan-exit.toml
-need systemd/easytier-center.service
-need systemd/cloudflared.service
+need docs/tunnel.md
 
 python3 - <<PY
-import pathlib, sys
+import json, pathlib, re, sys
 root = pathlib.Path("$root")
 
-try:
-    import yaml
-except ImportError:
-    yaml = None
-
-required_env = [
-    "EASYTIER_NETWORK_NAME",
-    "EASYTIER_NETWORK_SECRET",
-    "EASYTIER_PUBLIC_HOST",
-    "TUNNEL_TOKEN",
-]
-env_text = (root / ".env.example").read_text()
-missing = [key for key in required_env if key not in env_text]
-if missing:
-    print("env.example missing keys:", ", ".join(missing), file=sys.stderr)
+wrangler = (root / "cloudflare/wrangler.jsonc").read_text()
+# strip // comments for a rough parse
+stripped = re.sub(r"^\s*//.*$", "", wrangler, flags=re.M)
+data = json.loads(stripped)
+if data.get("name") != "easytier-center":
+    print("wrangler name must be easytier-center", file=sys.stderr)
+    sys.exit(1)
+if data.get("main") != "src/index.ts":
+    print("wrangler main must be src/index.ts", file=sys.stderr)
+    sys.exit(1)
+bindings = data.get("durable_objects", {}).get("bindings", [])
+if not any(b.get("class_name") == "EasyTierServer" for b in bindings):
+    print("missing EasyTierServer durable object", file=sys.stderr)
     sys.exit(1)
 
-toml = (root / "conf/easytier.toml").read_text()
-for needle in ("ws://127.0.0.1:11011/", "no_tun = true", "private_mode = true", "mapped_listeners"):
-    if needle not in toml:
-        print(f"easytier.toml missing {needle!r}", file=sys.stderr)
+readme = (root / "README.md").read_text()
+for needle in ("wrangler", "secure-mode", "cf-deploy.sh"):
+    if needle not in readme:
+        print(f"README missing {needle!r}", file=sys.stderr)
         sys.exit(1)
 
-bridge_toml = (root / "conf/easytier.bridge.toml").read_text()
-if "ws://0.0.0.0:11011/" not in bridge_toml:
-    print("easytier.bridge.toml must listen on 0.0.0.0", file=sys.stderr)
+client = (root / "examples/client.toml").read_text()
+if "secure_mode = true" not in client or "wss://" not in client:
+    print("client.toml must use secure_mode and wss peer", file=sys.stderr)
     sys.exit(1)
 
-if yaml is not None:
-    for name in ("docker-compose.yml", "docker-compose.bridge.yml", "docker-compose.quick.yml"):
-        with (root / name).open() as fh:
-            data = yaml.safe_load(fh)
-        if not data or "services" not in data:
-            print(f"{name} has no services", file=sys.stderr)
-            sys.exit(1)
-        if name != "docker-compose.quick.yml" and "easytier" not in data["services"]:
-            print(f"{name} missing easytier service", file=sys.stderr)
-            sys.exit(1)
-        if "cloudflared" not in data["services"]:
-            print(f"{name} missing cloudflared service", file=sys.stderr)
-            sys.exit(1)
-    print("compose yaml ok")
-else:
-    print("pyyaml not installed; skipped compose parse")
-
-print("validate ok")
+print("cloudflare worker config ok")
 PY
 
 if [[ "$fail" -ne 0 ]]; then

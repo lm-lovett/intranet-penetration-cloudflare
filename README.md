@@ -1,137 +1,124 @@
-# EasyTier + Cloudflare 中心节点
+# EasyTier 中心节点（Cloudflare Workers）
 
-用官方 [EasyTier](https://easytier.cn/) 在任意一台**没有公网 IP** 的机器上跑共享中心节点，再经 [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) 对外提供 `wss://` 入口。远程设备连上中心节点后自动组虚拟网，需要访问家里/公司局域网时再加一个子网出口节点。
+不需要 Docker，也不需要自己的 24 小时主机。中心节点直接跑在 Cloudflare 边缘：`wrangler deploy` 之后，客户端用 `wss://你的 Worker 域名/` 接入。
 
 ```text
-远程客户端  --wss://et.example.com-->  Cloudflare 边缘
-                                          |
-                                     Cloudflare Tunnel
-                                          |
-中心机器  cloudflared  →  easytier-core (仅本机 127.0.0.1:11011)
-                                          |
+远程客户端  --wss://easytier-center.<账号>.workers.dev-->  Cloudflare Worker
+                                                              │
+                                                     Durable Object 中继
+                                                              │
 家宽出口节点 (可选)  -- 导出 192.168.1.0/24 -->  远程访问内网
 ```
 
-中心节点开 `--no-tun`，不创建虚拟网卡，不需要 root，也不对外开放任何入站端口。
+Worker 实现来自 [easytier-edge](https://github.com/fordes123/easytier-edge)（LGPL-3.0），协议走 Noise XX + `secure-mode`。本仓库 Worker 名是 `easytier-center`。
 
 ## 前置条件
 
-- 一台能 24 小时在线、能访问外网 443/7844 的 Linux 机器（NAS、旁路网关、VPS 均可）
-- Docker 与 Docker Compose，或直接安装 `easytier-core` + `cloudflared`
-- Cloudflare 账号，域名 NS 已托管到 Cloudflare（仅 CNAME 接入不够）
-- 免费计划即可；控制台 **Network → WebSockets** 保持开启
+- Node.js 20+ 和 [pnpm](https://pnpm.io/)
+- Cloudflare 账号（免费计划即可）
+- 本机第一次部署需要 `wrangler login`；CI 用 API Token
 
-## 1. 创建 Cloudflare Tunnel
+Rust 只在**构建 WASM** 时需要。`cloudflare/scripts/build-wasm.mjs` 会按 `rust-toolchain.toml` 使用 1.95.0 + `wasm32-unknown-unknown`。没有的话先装 [rustup](https://rustup.rs/)。
 
-1. 打开 [Zero Trust → Networks → Tunnels](https://one.dash.cloudflare.com/)，点 **Create a tunnel**，选 Cloudflared，名称例如 `easytier-center`。
-2. 复制安装命令里的 **Token**，稍后写入 `.env` 的 `TUNNEL_TOKEN`。
-3. 添加一条 **Published application** 路由：
-   - Subdomain / Domain：例如 `et.example.com`
-   - Type：`HTTP`
-   - URL：`http://127.0.0.1:11011`
-   - Cloudflare 会自动处理 WebSocket 升级，不要填 `ws://` / `wss://`
-4. SSL/TLS 模式用 **Full** 即可（Tunnel 出站由 Cloudflare 终结 TLS）。
-
-## 2. 启动中心节点
+## 1. 部署到 Cloudflare
 
 ```bash
-git clone https://github.com/lm-lovett/intranet-penetration-cloudflare.git
 cd intranet-penetration-cloudflare
-cp .env.example .env
+npm install -g pnpm
+./scripts/cf-deploy.sh login
 ```
 
-编辑 `.env`：填入网络名、密钥、公网域名和 Tunnel Token。然后：
+生成网络密码（自己记下来）和服务端密钥，再写入 Worker Secret：
 
 ```bash
-docker compose up -d
-docker compose logs -f
+export EASYTIER_NETWORK_NAME=office
+export EASYTIER_NETWORK_SECRET='换成足够长的随机串'
+./scripts/cf-deploy.sh secrets
+./scripts/cf-deploy.sh
 ```
 
-本机确认中心节点起来：
+`secrets` 会把公钥打在终端上。客户端如需校验中心节点身份，把该公钥配到 `peer_public_key`。
 
-```bash
-docker exec easytier-center easytier-cli node
-docker exec easytier-center easytier-cli peer
+部署成功后 Wrangler 会打印类似：
+
+```text
+https://easytier-center.<你的子域>.workers.dev
 ```
 
-没有 Docker 时，把 `conf/easytier.toml` 和 `.env` 拷到 `/etc/easytier/`（`.env` 命名为 `center.env`），安装官方 `easytier-core` 与 `cloudflared`，启用 `systemd/` 下两个 unit。
+健康检查：打开 `https://easytier-center.<子域>.workers.dev/healthz`，应返回 `"ok": true`。
 
-## 3. 客户端接入
+### 绑定自己的域名（可选）
 
-网络名和密钥必须与中心节点一致。不要在 peer 地址里写 `:0` 端口。
+Cloudflare Dashboard → Workers → `easytier-center` → Settings → Domains & Routes，加上例如 `et.example.com`。客户端 peer 改成 `wss://et.example.com/`。
+
+## 2. 客户端接入
+
+必须开 `--secure-mode`，网络名/密钥与 Secret 里的 `EASYTIER_NETWORKS` 一致。不要写 `:0` 端口。
 
 ```bash
 easytier-core \
   -d \
   --network-name office \
-  --network-secret '你的密钥' \
-  -p 'wss://et.example.com'
+  --network-secret '和部署时相同的密钥' \
+  --secure-mode \
+  -p 'wss://easytier-center.<子域>.workers.dev/'
 ```
 
-或使用仓库里的配置文件：
+或改仓库里的示例：
 
 ```bash
 cp examples/client.toml /tmp/client.toml
-# 改 network_secret 和 peer uri
+# 改 network_secret 和 [[peer]] uri
 easytier-core -c /tmp/client.toml
 ```
 
-手机 App：网络方式选手动，服务器填 `wss://et.example.com`。
+每台客户端可以再生成一对密钥并写进配置，重启后身份才稳定：
 
-## 4. 内网穿透（导出局域网）
+```bash
+cd cloudflare && pnpm run keys
+```
 
-中心节点只做发现和中继。要让远程机器访问家里的 `192.168.1.0/24`，在一台已经能到达该网段的设备上启动出口节点：
+把输出的 `LOCAL_PRIVATE_KEY` / `LOCAL_PUBLIC_KEY` 填进客户端的 `--local-private-key` / `--local-public-key`。
+
+## 3. 内网穿透（导出局域网）
+
+Worker 只做发现和中继，没有 TUN。要访问家里 `192.168.1.0/24`，在一台已经能到达该网段的设备上启动出口节点：
 
 ```bash
 sudo easytier-core -c examples/lan-exit.toml
 ```
 
-把 `[[proxy_network]]` 的 CIDR 改成实际网段。远程客户端加入同一虚拟网后，即可访问该网段里的主机。
+把 `[[peer]]` 改成你的 Worker `wss://` 地址，把 `[[proxy_network]]` 改成实际网段。
 
-## Docker Desktop（macOS / Windows）
+## 配置项
 
-host 网络不可用时改用 bridge 编排，并在 Cloudflare 把 Service URL 改成 `http://easytier:11011`：
+写入 Cloudflare 的三个 Secret：
+
+| Secret | 含义 |
+| --- | --- |
+| `EASYTIER_NETWORKS` | JSON 数组，例如 `[{"network_name":"office","network_secret":"..."}]` |
+| `LOCAL_PRIVATE_KEY` | 中心节点 X25519 私钥（Base64） |
+| `LOCAL_PUBLIC_KEY` | 对应公钥；客户端可 pin |
+
+`wrangler.jsonc` 里的普通变量：
+
+| 变量 | 默认 | 含义 |
+| --- | --- | --- |
+| `EASYTIER_HOSTNAME` | `edge` | 中继在 EasyTier 里显示的 hostname |
+| `MAX_FRAME_BYTES` | `1048576` | 单帧上限 |
+
+## 本地开发
 
 ```bash
-docker compose -f docker-compose.bridge.yml up -d
+cd cloudflare
+pnpm install
+cp .dev.vars.example .dev.vars
+# 把 .dev.vars 里的密钥换成 `pnpm run keys` 的输出
+pnpm run dev
 ```
 
-## 临时域名试跑
+本机客户端连 `ws://127.0.0.1:8787/`。
 
-没有自己的域名时可以用 `*.trycloudflare.com`：
+## 可选：自己机器 + Cloudflare Tunnel
 
-```bash
-docker compose -f docker-compose.yml -f docker-compose.quick.yml up
-```
-
-从 cloudflared 日志里复制 `https://xxxx.trycloudflare.com`，把 `.env` 里的 `EASYTIER_PUBLIC_HOST` 改成同样的主机名（不要带协议），客户端用 `wss://xxxx.trycloudflare.com`。
-
-## 配置说明
-
-| 变量 | 作用 |
-| --- | --- |
-| `EASYTIER_NETWORK_NAME` / `EASYTIER_NETWORK_SECRET` | 虚拟网身份，所有节点必须相同 |
-| `EASYTIER_PUBLIC_HOST` | Cloudflare 对外域名，写入 EasyTier `mapped_listeners` |
-| `EASYTIER_HOSTNAME` | 中心节点在 peer 列表里的名字 |
-| `TUNNEL_TOKEN` | Zero Trust 下发的 Tunnel 令牌 |
-
-中心节点默认：
-
-- 只监听 `ws://127.0.0.1:11011`，不暴露公网端口
-- `private_mode`：拒绝其它网络名/密钥的节点
-- `no_tun`：纯中继，不占用虚拟 IP
-- `mapped_listeners = ["wss://你的域名/"]`：把 Cloudflare 入口通告给对端
-
-## 故障排查
-
-| 现象 | 处理 |
-| --- | --- |
-| Cloudflare 502 | `cloudflared` 未连上，或 EasyTier 没在 `127.0.0.1:11011` 监听 |
-| 客户端连不上 WSS | 确认 WebSockets 开启；peer 写成 `wss://域名` 不要带 `:0` |
-| GUI 连 WSS 失败、CLI 成功 | Cloudflare 需支持 TLS 1.3（默认已开） |
-| 能进虚拟网但访问不了局域网 | 出口节点要加 `proxy_network`，且和客户端同一 `network_name` |
-| Docker 里 fd 耗尽 | compose 已设 `LimitNOFILE`；systemd 同样需要 |
-
-## 不自建机器时
-
-不想跑 24 小时主机，可以把中继直接放到 Cloudflare Workers 边缘：[easytier-edge](https://github.com/fordes123/easytier-edge)。客户端同样用 `wss://你的 Worker 域名/`，但必须开 `--secure-mode` 并配置网络白名单密钥。本仓库默认方案仍是官方 `easytier-core` + Tunnel，协议兼容性更好。
+如果暂时不想起 Workers / 不想用 `secure-mode`，可以在一台 24 小时在线的 Linux 上跑官方 `easytier-core`，再用 Tunnel 暴露 `ws://127.0.0.1:11011`。见 [docs/tunnel.md](docs/tunnel.md)。不需要 Docker，systemd 也能跑。
