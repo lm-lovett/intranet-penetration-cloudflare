@@ -50,6 +50,7 @@ func printUsage() {
 	fmt.Print(`cfpen — Cloudflare dual-mode intranet tunnel
 
 Usage:
+  cfpen login [--zone example.com]
   cfpen login --token <api_token> [--zone example.com]
   cfpen up
   cfpen expose <origin> [--hostname app.example.com] [--name web]
@@ -60,7 +61,7 @@ Usage:
   cfpen down
 
 Intranet (public HTTPS + SOCKS origin):
-  cfpen login --token $CLOUDFLARE_API_TOKEN --zone example.com
+  cfpen login --zone example.com
   cfpen up
   cfpen expose 8080 --hostname app.example.com
 
@@ -85,6 +86,7 @@ func cmdLogin(args []string) error {
 	fs := flag.NewFlagSet("login", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var token, account, zone, cfgPath, credsPath string
+	noBrowser := fs.Bool("no-browser", false, "do not open a browser; print URLs and wait for a pasted token")
 	fs.StringVar(&token, "token", "", "Cloudflare API token")
 	fs.StringVar(&account, "account-id", "", "Cloudflare account id")
 	fs.StringVar(&zone, "zone", "", "zone name, e.g. example.com")
@@ -101,6 +103,7 @@ func cmdLogin(args []string) error {
 		Token:     token,
 		AccountID: account,
 		Zone:      zone,
+		NoBrowser: *noBrowser,
 	})
 }
 

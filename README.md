@@ -34,8 +34,22 @@ go build -o cfpen ./cmd/cfpen
 ## 内网：登录并启动
 
 ```bash
-cfpen login --token "$CLOUDFLARE_API_TOKEN" --zone example.com
+cfpen login --zone example.com
 cfpen up
+```
+
+`cfpen login` 会打开浏览器进入 Cloudflare 登录页（未登录会先登录），并预填创建 Token 所需权限。在 Dashboard 里点 Create Token，把 Token 粘贴回本机打开的 cfpen 页面或终端即可。
+
+无图形界面时用 `--no-browser`，终端会打印 Cloudflare 链接，把 Token 粘贴回终端：
+
+```bash
+cfpen login --no-browser --zone example.com
+```
+
+也可以继续手动传入 Token：
+
+```bash
+cfpen login --token "$CLOUDFLARE_API_TOKEN" --zone example.com
 ```
 
 默认会：
@@ -123,7 +137,7 @@ services:
 
 | 命令 | 作用 |
 | --- | --- |
-| `cfpen login` | 校验 Token，选择账号和域名 |
+| `cfpen login` | 打开浏览器登录 Cloudflare，或使用 `--token` |
 | `cfpen up` | 内网启动 Tunnel + SOCKS + 控制台 |
 | `cfpen expose` | 发布 HTTP/HTTPS/TCP/SSH/RDP 到公网 hostname |
 | `cfpen unexpose` | 取消发布并删除对应 DNS |

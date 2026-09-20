@@ -13,6 +13,7 @@ type LoginOptions struct {
 	Token     string
 	AccountID string
 	Zone      string
+	NoBrowser bool
 }
 
 func (a *App) Login(ctx context.Context, opt LoginOptions) error {
@@ -21,8 +22,16 @@ func (a *App) Login(ctx context.Context, opt LoginOptions) error {
 		token = strings.TrimSpace(os.Getenv("CLOUDFLARE_API_TOKEN"))
 	}
 	if token == "" {
-		return fmt.Errorf("missing token; pass --token or set CLOUDFLARE_API_TOKEN")
+		tok, err := CollectTokenViaBrowser(ctx, CollectTokenOptions{NoBrowser: opt.NoBrowser})
+		if err != nil {
+			return err
+		}
+		token = tok
 	}
+	return a.finishLogin(ctx, token, opt)
+}
+
+func (a *App) finishLogin(ctx context.Context, token string, opt LoginOptions) error {
 	cf := cloudflare.New(token, opt.AccountID)
 	info, err := cf.VerifyToken(ctx)
 	if err != nil {
