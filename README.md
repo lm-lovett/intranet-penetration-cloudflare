@@ -47,6 +47,13 @@ https://easytier-center.<你的子域>.workers.dev
 
 健康检查：打开 `https://easytier-center.<子域>.workers.dev/healthz`，应返回 `"ok": true`。
 
+### 认领临时预览账号
+
+`wrangler deploy --temporary` 会先建一个独立的预览账号（例如 `Zesty Nautilus`），再给你认领链接。认领后这个预览账号会变成你名下的**第二个 Cloudflare 账号**，Worker 不会自动出现在原来那个已经托管域名的账号里。
+
+- 在 Dashboard 左上角账号切换器里找预览账号名称。
+- 要把中心节点放到已有账号：对本机执行 `./scripts/cf-deploy.sh login`，选中已有账号，再跑 `secrets` 和 `deploy`（不要加 `--temporary`）。绑定自定义域名也必须在那个已有账号上做。
+
 ### 绑定自己的域名（可选）
 
 Cloudflare Dashboard → Workers → `easytier-center` → Settings → Domains & Routes，加上例如 `et.example.com`。客户端 peer 改成 `wss://et.example.com/`。
