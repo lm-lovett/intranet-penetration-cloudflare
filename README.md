@@ -78,6 +78,8 @@ Cloudflare Dashboard → Workers → `easytier-center` → Settings → Domains 
 
 输入初始节点后要点一下列表项确认，确认后地址会变成卡片。然后点 **运行网络**。
 
+连这个 Worker **不需要** WireGuard 入站。GUI 默认会监听 `wg://0.0.0.0:11011`，Windows 上若端口已被另一个 EasyTier 实例占用，会报 `监听器添加失败` / `AddrInUse (10048)`。到 **高级设置 → 监听地址** 删掉 `wg://0.0.0.0:11011` 即可；这条失败一般会 `retry listen later`，TCP/UDP 和去 Worker 的 `wss://` 仍能用。真要留 WG，把端口改成空闲的（例如 `wg://0.0.0.0:11021`），或多开网络时每个实例用不同端口。
+
 **安全模式必须开**，否则握手失败（`same-network peers must use the same secure mode`）：
 
 - 新版 GUI：展开 **高级设置 → 功能开关**，打开 **安全模式 / Secure Mode**（在「禁用加密」旁边）。不要把它和「禁用加密」「私有模式」搞混。
