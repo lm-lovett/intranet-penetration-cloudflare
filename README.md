@@ -58,18 +58,17 @@ https://easytier-center.<你的子域>.workers.dev
 
 当前中心节点自定义域名是 **`lm191549149.me`**，Worker 已经绑好。GUI 初始节点填 `wss://lm191549149.me:443/`。
 
-还差阿里云把 DNS 服务器改成 Cloudflare 这两条（不要填成网址，也不要加 `https://`）：
+阿里云 DNS 已经改对。Cloudflare 站点目前仍是 **Pending（未激活）**，解析只有占位 IPv6 `100::`、没有 IPv4，证书也还没签发，所以 `https://lm191549149.me/healthz` 会打不开。
 
-```text
-macy.ns.cloudflare.com
-sonny.ns.cloudflare.com
-```
+在 Cloudflare 点一次「检查名称服务器」：
 
-阿里云操作：登录 [域名控制台](https://dc.console.aliyun.com/) → 域名列表找到 `lm191549149.me` → **管理** → 左侧 **DNS管理** → **DNS修改** → **修改DNS服务器** → 删掉原来的 `dns25.hichina.com` / `dns26.hichina.com`，填上面两个 → **确定**。
+1. 打开 [Cloudflare 网站概览](https://dash.cloudflare.com/f6415092f5078e7f20e61b7008492ace/lm191549149.me)
+2. 看到域名状态是 **Pending / 待处理**
+3. 点 **Check nameservers now**（中文多半是 **重新检查名称服务器** / **立即验证**）
+4. 等到状态变成 **Active / 已激活**（可能几分钟，偶尔要更久）
+5. 再打开 `https://lm191549149.me/healthz`
 
-不要去「云解析 DNS」里加 A 记录，那不是这一步。改完等几分钟到几小时，关掉代理打开 `https://lm191549149.me/healthz`，应返回 `"ok": true`。
-
-若按钮是灰的或提示 hold / 未实名，先在阿里云把域名实名做完。若自定义域名仍必须开代理，见 [docs/tunnel.md](docs/tunnel.md)。
+国内 DNS 可能还缓存着旧结果，可把电脑 DNS 临时改成 `223.5.5.5` 或 `8.8.8.8` 再试。在这之前继续用 `https://easytier-center.liumeng191549149.workers.dev/healthz`。
 
 ## 2. 客户端接入
 
