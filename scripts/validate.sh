@@ -46,8 +46,17 @@ for needle in ("wrangler", "secure-mode", "cf-deploy.sh", "easytier-gui", "ÂàùÂß
         sys.exit(1)
 
 client = (root / "examples/client.toml").read_text()
-if "secure_mode = true" not in client or "wss://" not in client or ":443" not in client:
-    print("client.toml must use secure_mode and wss :443 peer", file=sys.stderr)
+if "[secure_mode]" not in client or "enabled = true" not in client:
+    print("client.toml must use [secure_mode] enabled = true", file=sys.stderr)
+    sys.exit(1)
+if re.search(r"(?m)^secure_mode = true\b", client):
+    print("client.toml must not use boolean secure_mode = true", file=sys.stderr)
+    sys.exit(1)
+if "wss://" not in client or ":443" not in client:
+    print("client.toml must use wss :443 peer", file=sys.stderr)
+    sys.exit(1)
+if "local_private_key" not in client:
+    print("client.toml must set secure-mode local keys", file=sys.stderr)
     sys.exit(1)
 
 print("cloudflare worker config ok")

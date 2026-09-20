@@ -1,11 +1,13 @@
 # Remote client: laptop / phone / office PC connecting to the
 # Cloudflare Workers center node.
 #   easytier-core -c client.toml
+#
+# EasyTier 2.6.x needs a [secure_mode] table. `secure_mode = true` is invalid.
+# Replace the example keys with `cd cloudflare && pnpm run keys`.
 
 instance_name = "client"
 hostname = "laptop"
 dhcp = true
-secure_mode = true
 listeners = [
   "tcp://0.0.0.0:11010",
   "udp://0.0.0.0:11010",
@@ -17,6 +19,11 @@ network_secret = "change-me-to-a-long-random-secret"
 
 [[peer]]
 uri = "wss://easytier-center.example.workers.dev:443/"
+
+[secure_mode]
+enabled = true
+local_private_key = "uMJPte6pTyZ0sIs1+RaswMrcmg4pEkRRqJenPHje5Uk="
+local_public_key = "wNJRSiui5K1gx/DbSJRyZ/27DtSRmLs+D3cpIFYhkSE="
 
 [flags]
 enable_encryption = true

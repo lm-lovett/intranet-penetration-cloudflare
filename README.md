@@ -56,7 +56,7 @@ https://easytier-center.<你的子域>.workers.dev
 
 ### 绑定自己的域名（可选）
 
-Cloudflare Dashboard → Workers → `easytier-center` → Settings → Domains & Routes，加上例如 `et.example.com`。客户端 peer 改成 `wss://et.example.com/`。
+Cloudflare Dashboard → Workers → `easytier-center` → Settings → Domains & Routes，加上例如 `et.example.com`。客户端 peer 改成 `wss://et.example.com:443/`。
 
 ## 2. 客户端接入
 
@@ -88,10 +88,18 @@ uri = "wss://easytier-center.<子域>.workers.dev:443/"
 
 连这个 Worker **不需要** WireGuard 入站。GUI 默认会监听 `wg://0.0.0.0:11011`，Windows 上若端口已被另一个 EasyTier 实例占用，会报 `监听器添加失败` / `AddrInUse (10048)`。到 **高级设置 → 监听地址** 删掉 `wg://0.0.0.0:11011` 即可；这条失败一般会 `retry listen later`，TCP/UDP 和去 Worker 的 `wss://` 仍能用。真要留 WG，把端口改成空闲的（例如 `wg://0.0.0.0:11021`），或多开网络时每个实例用不同端口。
 
-**安全模式必须开**，否则握手失败（`same-network peers must use the same secure mode`）：
+**安全模式必须开**。这个 Worker 会直接关掉旧握手，GUI 就会报 `conn closed during wait handshake response`。EasyTier 2.6.x 配置必须是表，**不能**写 `secure_mode = true`（解析会失败）：
 
-- 新版 GUI：展开 **高级设置 → 功能开关**，打开 **安全模式 / Secure Mode**（在「禁用加密」旁边）。不要把它和「禁用加密」「私有模式」搞混。
-- 旧版 GUI 没有这个开关：点 **显示配置 / 编辑配置文件**，在文件里加上 `secure_mode = true`（或 `[secure_mode]` 段里 `enabled = true`），保存后再运行。如果一点保存这一行就消失，换较新的 GUI，或直接用下面的 `easytier-core`。
+```toml
+[secure_mode]
+enabled = true
+local_private_key = "<本机私钥，base64>"
+local_public_key = "<本机公钥，base64>"
+```
+
+- 新版 GUI：展开 **高级设置 → 功能开关**，打开 **安全模式 / Secure Mode**（在「禁用加密」旁边），不要和「禁用加密」「私有模式」搞混。
+- 没有这个开关：点 **编辑配置文件**，贴上上面的 `[secure_mode]` 段。密钥用 `cd cloudflare && pnpm run keys` 生成。只写 `enabled = true` 不写密钥时，2.6.4 会报 `local private key is not set`。
+- 需要 **EasyTier 2.6.4+**。更早的 GUI 没有 Noise 握手，连不上这个 Worker。
 
 可选：把部署时打印的中心节点公钥配到 `peer_public_key`，用来锁定 Worker 身份。GUI 里若没有这项，同样写进配置文件。
 

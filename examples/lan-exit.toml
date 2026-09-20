@@ -2,11 +2,13 @@
 # subnet so remote clients can reach 192.168.1.0/24.
 #
 #   sudo easytier-core -c lan-exit.toml
+#
+# EasyTier 2.6.x needs a [secure_mode] table. `secure_mode = true` is invalid.
+# Replace the example keys with `cd cloudflare && pnpm run keys`.
 
 instance_name = "lan-exit"
 hostname = "home-gateway"
 dhcp = true
-secure_mode = true
 listeners = [
   "tcp://0.0.0.0:11010",
   "udp://0.0.0.0:11010",
@@ -21,6 +23,11 @@ uri = "wss://easytier-center.example.workers.dev:443/"
 
 [[proxy_network]]
 cidr = "192.168.1.0/24"
+
+[secure_mode]
+enabled = true
+local_private_key = "YAdkA9XEmSFvl9V1UNAiJVkzWht89tLVj9G3Bq+upHs="
+local_public_key = "K8ntGZQhE6n9IlyJ95DardlhqFOI9D3Hs2OSTz3taBg="
 
 [flags]
 enable_encryption = true
