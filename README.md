@@ -60,7 +60,7 @@ https://easytier-center.<你的子域>.workers.dev
 
 阿里云 DNS 已经改对。Cloudflare 站点目前仍是 **Pending（未激活）**，解析只有占位 IPv6 `100::`、没有 IPv4，证书也还没签发，所以 `https://lm191549149.me/healthz` 会打不开。
 
-浏览器打开 `https://lm191549149.me/` 会看到中继说明，不是博客。博客在 `https://blog.lm191549149.me/`。确认中继用 `https://lm191549149.me/healthz`。GUI 初始节点填 `wss://lm191549149.me:443/`。
+浏览器打开 `https://lm191549149.me/` 会转到博客首页。EasyTier 仍用同一主机的 WebSocket 接入。
 
 ## 2. 客户端接入
 
