@@ -1,0 +1,39 @@
+# EasyTier center node + Cloudflare Tunnel.
+# Uses host networking so the Zero Trust public hostname can target
+# http://127.0.0.1:11011 (the default Cloudflare dashboard example).
+#
+# Linux hosts only. On Docker Desktop, use docker-compose.bridge.yml instead.
+
+services:
+  easytier:
+    image: easytier/easytier:latest
+    # Mainland China mirror (uncomment if Docker Hub is slow):
+    # image: m.daocloud.io/docker.io/easytier/easytier:latest
+    container_name: easytier-center
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      EASYTIER_NETWORK_NAME: ${EASYTIER_NETWORK_NAME}
+      EASYTIER_NETWORK_SECRET: ${EASYTIER_NETWORK_SECRET}
+      EASYTIER_PUBLIC_HOST: ${EASYTIER_PUBLIC_HOST}
+      EASYTIER_HOSTNAME: ${EASYTIER_HOSTNAME:-cf-center}
+    volumes:
+      - ./conf/easytier.toml:/etc/easytier/easytier.toml:ro
+      - /etc/machine-id:/etc/machine-id:ro
+    command: ["-c", "/etc/easytier/easytier.toml"]
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: easytier-cloudflared
+    restart: unless-stopped
+    network_mode: host
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    depends_on:
+      - easytier

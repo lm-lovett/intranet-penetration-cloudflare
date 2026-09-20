@@ -1,0 +1,30 @@
+# Home / office gateway: joins the EasyTier network and exports a LAN subnet
+# so remote clients can reach 192.168.1.0/24 through the overlay.
+#
+# Replace the CIDR with the LAN you actually want to export, then:
+#   sudo easytier-core -c lan-exit.toml
+#
+# This node needs TUN (root / NET_ADMIN). It is not the Cloudflare center.
+
+instance_name = "lan-exit"
+hostname = "home-gateway"
+dhcp = true
+listeners = [
+  "tcp://0.0.0.0:11010",
+  "udp://0.0.0.0:11010",
+]
+
+[network_identity]
+network_name = "office"
+network_secret = "change-me-to-a-long-random-secret"
+
+[[peer]]
+uri = "wss://et.example.com/"
+
+[[proxy_network]]
+cidr = "192.168.1.0/24"
+
+[flags]
+enable_encryption = true
+multi_thread = true
+enable_kcp_proxy = true

@@ -1,0 +1,20 @@
+# EasyTier center behind Cloudflare Tunnel when the process is not on the
+# host network. Listen on all interfaces so the cloudflared sidecar can
+# reach ws://easytier:11011.
+
+instance_name = "cf-center"
+hostname = "${EASYTIER_HOSTNAME:-cf-center}"
+listeners = ["ws://0.0.0.0:11011/"]
+mapped_listeners = ["wss://${EASYTIER_PUBLIC_HOST}/"]
+rpc_portal = "127.0.0.1:15888"
+
+[network_identity]
+network_name = "${EASYTIER_NETWORK_NAME}"
+network_secret = "${EASYTIER_NETWORK_SECRET}"
+
+[flags]
+no_tun = true
+private_mode = true
+relay_all_peer_rpc = true
+enable_encryption = true
+multi_thread = true

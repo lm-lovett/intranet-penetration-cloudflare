@@ -1,0 +1,19 @@
+# EasyTier center / shared node behind Cloudflare Tunnel.
+# Environment variables are expanded by easytier-core from the container env.
+
+instance_name = "cf-center"
+hostname = "${EASYTIER_HOSTNAME:-cf-center}"
+listeners = ["ws://127.0.0.1:11011/"]
+mapped_listeners = ["wss://${EASYTIER_PUBLIC_HOST}/"]
+rpc_portal = "127.0.0.1:15888"
+
+[network_identity]
+network_name = "${EASYTIER_NETWORK_NAME}"
+network_secret = "${EASYTIER_NETWORK_SECRET}"
+
+[flags]
+no_tun = true
+private_mode = true
+relay_all_peer_rpc = true
+enable_encryption = true
+multi_thread = true

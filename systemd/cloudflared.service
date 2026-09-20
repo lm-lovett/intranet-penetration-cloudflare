@@ -1,0 +1,15 @@
+[Unit]
+Description=Cloudflare Tunnel for EasyTier center
+After=network-online.target easytier-center.service
+Wants=network-online.target
+Requires=easytier-center.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/easytier/center.env
+ExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate run
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

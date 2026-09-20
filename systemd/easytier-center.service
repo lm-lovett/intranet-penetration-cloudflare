@@ -1,0 +1,15 @@
+[Unit]
+Description=EasyTier Cloudflare center node
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/easytier/center.env
+ExecStart=/usr/local/bin/easytier-core -c /etc/easytier/easytier.toml
+Restart=always
+RestartSec=3
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target

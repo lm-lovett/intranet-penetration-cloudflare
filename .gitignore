@@ -1,0 +1,7 @@
+.env
+*.log
+cert.pem
+.credentials/
+conf/credentials.json
+conf/cert.pem
+conf/cloudflared.yml

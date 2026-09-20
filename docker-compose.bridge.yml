@@ -1,0 +1,39 @@
+# Docker Desktop (macOS / Windows) and any host without `network_mode: host`.
+#
+#   docker compose -f docker-compose.bridge.yml up -d
+#
+# In Cloudflare Zero Trust, set the public hostname Service URL to
+# http://easytier:11011 (container DNS name, not localhost).
+
+services:
+  easytier:
+    image: easytier/easytier:latest
+    # image: m.daocloud.io/docker.io/easytier/easytier:latest
+    container_name: easytier-center
+    hostname: easytier
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      EASYTIER_NETWORK_NAME: ${EASYTIER_NETWORK_NAME}
+      EASYTIER_NETWORK_SECRET: ${EASYTIER_NETWORK_SECRET}
+      EASYTIER_PUBLIC_HOST: ${EASYTIER_PUBLIC_HOST}
+      EASYTIER_HOSTNAME: ${EASYTIER_HOSTNAME:-cf-center}
+    volumes:
+      - ./conf/easytier.bridge.toml:/etc/easytier/easytier.toml:ro
+    command: ["-c", "/etc/easytier/easytier.toml"]
+    expose:
+      - "11011"
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: easytier-cloudflared
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    depends_on:
+      - easytier

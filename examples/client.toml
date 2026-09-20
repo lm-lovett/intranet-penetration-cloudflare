@@ -1,0 +1,22 @@
+# Remote client: laptop / phone companion / office PC.
+# Copy, fill secrets, then:
+#   easytier-core -c client.toml
+
+instance_name = "client"
+hostname = "laptop"
+dhcp = true
+listeners = [
+  "tcp://0.0.0.0:11010",
+  "udp://0.0.0.0:11010",
+]
+
+[network_identity]
+network_name = "office"
+network_secret = "change-me-to-a-long-random-secret"
+
+[[peer]]
+uri = "wss://et.example.com/"
+
+[flags]
+enable_encryption = true
+multi_thread = true

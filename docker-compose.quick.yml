@@ -1,0 +1,12 @@
+# Quick tunnel (*.trycloudflare.com) for a smoke test without a custom domain.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.quick.yml up
+#
+# Copy the https://xxxx.trycloudflare.com URL from cloudflared logs. Clients
+# connect with that host over wss://. Set EASYTIER_PUBLIC_HOST to the same
+# hostname (no scheme) so mapped_listeners matches.
+
+services:
+  cloudflared:
+    command: ["tunnel", "--no-autoupdate", "--url", "http://127.0.0.1:11011"]
+    environment: {}

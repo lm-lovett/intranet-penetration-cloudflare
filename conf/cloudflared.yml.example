@@ -1,0 +1,16 @@
+# Optional locally-managed tunnel config.
+# Prefer a Zero Trust token (TUNNEL_TOKEN in .env). Use this file only if
+# you created the tunnel with `cloudflared tunnel create`.
+#
+#   cp cloudflared.yml.example cloudflared.yml
+#   # then point credentials-file at the JSON from `tunnel create`
+
+tunnel: REPLACE_TUNNEL_UUID
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: et.example.com
+    service: http://127.0.0.1:11011
+    originRequest:
+      noTLSVerify: true
+  - service: http_status:404
